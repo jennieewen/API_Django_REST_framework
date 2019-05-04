@@ -1,6 +1,8 @@
 from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from rest_framework.filters import SearchFilter
+from django_filters.rest_framework import DjangoFilterBackend
 from django.http.response import HttpResponseNotAllowed, HttpResponseForbidden
 from .models import Customer, Profession, DataSheet, Document
 from rest_framework import viewsets
@@ -15,6 +17,9 @@ from .serializers import (
 class CustomerViewSet(viewsets.ModelViewSet):
     ## queryset = Customer.objects.all() # equiv to select all from customer table
     serializer_class = CustomerSerializer
+    filter_backends = (DjangoFilterBackend, SearchFilter)
+    filter_fields = ('name',)
+    search_fields = ('name', 'address', 'data_sheet__description')
 
     # func replaces queryset =
     def get_queryset(self):
@@ -30,15 +35,15 @@ class CustomerViewSet(viewsets.ModelViewSet):
         if address:
             customers = Customer.objects.filter(address__icontains=address, active=status)
         else:
-            customers = Customer.objcets.filter(active=status)
+            customers = Customer.objects.filter(active=status)
         return customers
 
     # Overriding GET method
-    def list(self, request, *args, **kwargs):
-        # import pdb; pdb.set_trace()
-        customers = self.get_queryset()
-        serializer = CustomerSerializer(customers, many=True) # passing queryset
-        return Response(serializer.data)
+    # def list(self, request, *args, **kwargs):
+    #     # import pdb; pdb.set_trace()
+    #     customers = self.get_queryset()
+    #     serializer = CustomerSerializer(customers, many=True) # passing queryset
+    #     return Response(serializer.data)
 
     def retrieve(self, request, *args, **kwargs):
         obj = self.get_object()
