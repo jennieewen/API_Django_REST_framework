@@ -1,9 +1,7 @@
-from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.filters import SearchFilter
+from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
-from django.http.response import HttpResponseNotAllowed, HttpResponseForbidden
 from .models import Customer, Profession, DataSheet, Document
 from rest_framework import viewsets
 from .serializers import (
@@ -17,9 +15,12 @@ from .serializers import (
 class CustomerViewSet(viewsets.ModelViewSet):
     ## queryset = Customer.objects.all() # equiv to select all from customer table
     serializer_class = CustomerSerializer
-    filter_backends = (DjangoFilterBackend, SearchFilter)
+    filter_backends = (DjangoFilterBackend, SearchFilter, OrderingFilter)
     filter_fields = ('name',)
     search_fields = ('name', 'address', 'data_sheet__description')
+    ordering_fields = '__all__'
+    ordering = ('-id',)
+    lookup_field = 'name'
 
     # func replaces queryset =
     def get_queryset(self):
