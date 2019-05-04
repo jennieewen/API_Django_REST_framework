@@ -1,0 +1,154 @@
+from django.shortcuts import render
+from rest_framework.response import Response
+from rest_framework.decorators import action
+from django.http.response import HttpResponseNotAllowed, HttpResponseForbidden
+from .models import Customer, Profession, DataSheet, Document
+from rest_framework import viewsets
+from .serializers import (
+    CustomerSerializer,
+    ProfessionSerializer,
+    DataSheetSerializer,
+    DocumentSerializer
+)
+
+# ViewSets define the view behavior.
+class CustomerViewSet(viewsets.ModelViewSet):
+    ## queryset = Customer.objects.all() # equiv to select all from customer table
+    serializer_class = CustomerSerializer
+
+    # func replaces queryset =
+    def get_queryset(self):
+        # filtering against query parameters --> http://localhost:8000/api/customers/?id=7&active=False
+        # id = self.request.query_params.get('id', None)
+        address = self.request.query_params.get('address', None)
+
+        if self.request.query_params.get('active') == 'False':
+            status = False
+        else:
+            status = True
+
+        if address:
+            customers = Customer.objects.filter(address__icontains=address, active=status)
+        else:
+            customers = Customer.objcets.filter(active=status)
+        return customers
+
+    # Overriding GET method
+    def list(self, request, *args, **kwargs):
+        # import pdb; pdb.set_trace()
+        customers = self.get_queryset()
+        serializer = CustomerSerializer(customers, many=True) # passing queryset
+        return Response(serializer.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        obj = self.get_object()
+        serializer = CustomerSerializer(obj) # passing the object itself
+        return Response(serializer.data) # returns the object in postman
+
+        # return HttpResponseNotAllowed('not allowed') # <- returns a customizable status code
+        # return HttpResponseForbidden('Not Allowed')  <- returns msg
+
+
+    # Overriding POST
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        customer = Customer.objects.create(
+            name=data['name'], address=data['address'], data_sheet_id=data['data_sheet']
+        )
+        profession = Profession.objects.get(id=data['profession'])
+
+        customer.professions.add(profession)
+        customer.save()
+
+        serializer = CustomerSerializer(customer)
+        return Response(serializer.data)
+
+    # Overriding PUT
+    def update(self, request, *args, **kwargs):
+        customer = self.get_object() # same as Customer.objects.get(['pk'])
+        data = request.data
+        customer.name = data['name']
+        customer.address = data['address']
+        customer.data_sheet_id = data['data_sheet']
+
+        profession = Profession.objects.get(id=data['profession'])
+
+        for p in customer.professions.all():
+            customer.professions.remove(p)
+
+        customer.professions.add(profession)
+        customer.save()
+
+        serializer = CustomerSerializer(customer)
+        return Response(serializer.data)
+
+
+    # overriding PATCH
+    def partial_update(self, request, *args, **kwargs):
+        customer = self.get_object()
+        customer.name = request.data.get('name',customer.name)
+        customer.address = request.data.get('address',customer.address)
+        customer.data_sheet_id = request.data.get('data_sheet',customer.data_sheet_id)
+
+        customer.save()
+        serializer = CustomerSerializer(customer)
+        return Response(serializer.data)
+
+
+    # overriding DELETE
+    def destroy(self, request, *args, **kwargs):
+        customer = self.get_object()
+        customer.delete()
+
+        return Response('Object removed')
+
+    # custom actions
+    @action(detail=True)
+    def deactivate(self, request, **kwargs):
+        customer = self.get_object()
+        customer.active = False
+        customer.save()
+
+        serializer = CustomerSerializer(customer)
+        return Response(serializer.data)
+
+    @action(detail=False) # not a detail, it is action for whole endpoint
+    def deactivate_all(self, request, **kwargs):
+        customers = self.get_queryset()
+        customers.update(active=False)
+
+        serializer = CustomerSerializer(customers, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False)  # action for whole endpoint
+    def activate_all(self, request, **kwargs):
+        customers = self.get_queryset()
+        customers.update(active=True)
+
+        serializer = CustomerSerializer(customers, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['POST'])
+    def change_staus(self, request, **kwargs):
+        status = True if request.data['active'] == 'True' else False
+
+        customers = self.get_queryset()
+        customers.update(active=status)
+
+        serializer = CustomerSerializer(customers, many=True)
+        return Response(serializer.data)
+
+
+
+
+class ProfessionViewSet(viewsets.ModelViewSet):
+    queryset = Profession.objects.all() # equiv to select all from profession table
+    serializer_class = ProfessionSerializer
+
+class DataSheetViewSet(viewsets.ModelViewSet):
+    queryset = DataSheet.objects.all()
+    serializer_class = DataSheetSerializer
+
+class DocumentViewSet(viewsets.ModelViewSet):
+    queryset = Document.objects.all()
+    serializer_class = DocumentSerializer
