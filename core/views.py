@@ -19,8 +19,6 @@ from .serializers import (
     DocumentSerializer
 )
 
-
-# ViewSets define the view behavior.
 class CustomerViewSet(viewsets.ModelViewSet):
     ## queryset = Customer.objects.all() # equiv to select all from customer table
     serializer_class = CustomerSerializer
@@ -65,18 +63,18 @@ class CustomerViewSet(viewsets.ModelViewSet):
         # return HttpResponseForbidden('Not Allowed')  <- returns msg
 
     # Overriding POST
-    def create(self, request, *args, **kwargs):
-        data = request.data
-        customer = Customer.objects.create(
-            name=data['name'], address=data['address'], data_sheet_id=data['data_sheet']
-        )
-        profession = Profession.objects.get(id=data['profession'])
-
-        customer.professions.add(profession)
-        customer.save()
-
-        serializer = CustomerSerializer(customer)
-        return Response(serializer.data)
+    # def create(self, request, *args, **kwargs):
+    #     data = request.data
+    #     customer = Customer.objects.create(
+    #         name=data['name'], address=data['address'], data_sheet_id=data['data_sheet']
+    #     )
+    #     profession = Profession.objects.get(id=data['profession'])
+    #
+    #     customer.professions.add(profession)
+    #     customer.save()
+    #
+    #     serializer = CustomerSerializer(customer)
+    #     return Response(serializer.data)
 
     # Overriding PUT
     def update(self, request, *args, **kwargs):
