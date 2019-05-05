@@ -1,6 +1,14 @@
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import (
+    AllowAny,
+    IsAdminUser,
+    IsAuthenticatedOrReadOnly,
+    DjangoModelPermissions,
+    DjangoModelPermissionsOrAnonReadOnly
+)
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Customer, Profession, DataSheet, Document
 from rest_framework import viewsets
@@ -10,6 +18,7 @@ from .serializers import (
     DataSheetSerializer,
     DocumentSerializer
 )
+
 
 # ViewSets define the view behavior.
 class CustomerViewSet(viewsets.ModelViewSet):
@@ -21,6 +30,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
     ordering_fields = '__all__'
     ordering = ('-id',)
     lookup_field = 'name'
+    authentication_classes = [TokenAuthentication,]
 
     # func replaces queryset =
     def get_queryset(self):
@@ -53,7 +63,6 @@ class CustomerViewSet(viewsets.ModelViewSet):
 
         # return HttpResponseNotAllowed('not allowed') # <- returns a customizable status code
         # return HttpResponseForbidden('Not Allowed')  <- returns msg
-
 
     # Overriding POST
     def create(self, request, *args, **kwargs):
@@ -88,7 +97,6 @@ class CustomerViewSet(viewsets.ModelViewSet):
         serializer = CustomerSerializer(customer)
         return Response(serializer.data)
 
-
     # overriding PATCH
     def partial_update(self, request, *args, **kwargs):
         customer = self.get_object()
@@ -99,7 +107,6 @@ class CustomerViewSet(viewsets.ModelViewSet):
         customer.save()
         serializer = CustomerSerializer(customer)
         return Response(serializer.data)
-
 
     # overriding DELETE
     def destroy(self, request, *args, **kwargs):
@@ -145,16 +152,21 @@ class CustomerViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-
-
 class ProfessionViewSet(viewsets.ModelViewSet):
     queryset = Profession.objects.all() # equiv to select all from profession table
     serializer_class = ProfessionSerializer
+    authentication_classes = [TokenAuthentication,]
+    permission_classes = [IsAdminUser,]
+
 
 class DataSheetViewSet(viewsets.ModelViewSet):
     queryset = DataSheet.objects.all()
     serializer_class = DataSheetSerializer
+    permission_classes = [AllowAny,]
+
 
 class DocumentViewSet(viewsets.ModelViewSet):
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [DjangoModelPermissionsOrAnonReadOnly]
