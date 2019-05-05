@@ -9,7 +9,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = ['customer-base-api.herokuapp.com', 'frozen-meadow-15153.herokuapp.com']
+ALLOWED_HOSTS = ['customer-base-api.herokuapp.com']
 
 
 INSTALLED_APPS = [
